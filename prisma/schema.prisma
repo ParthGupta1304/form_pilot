@@ -1,19 +1,63 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+model Organization {
+  id          String   @id @default(cuid())
+  clerkOrgId  String   @unique
+  name        String
+  logoUrl     String?
+  accentColor String   @default("#534AB7")
+  forms       Form[]
+  apiKeys     ApiKey[]
+  createdAt   DateTime @default(now())
+}
+
+model Form {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  slug        String       @unique
+  title       String
+  description String?
+  schema      Json         @default("[]")
+  published   Boolean      @default(false)
+  responses   Response[]
+  aiSummary   AiSummary?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Response {
+  id           String   @id @default(cuid())
+  formId       String
+  form         Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  answers      Json
+  timeTakenSec Int?
+  completedAt  DateTime @default(now())
+}
+
+model AiSummary {
+  id          String   @id @default(cuid())
+  formId      String   @unique
+  form        Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  summary     String
+  themes      Json
+  sentiment   String
+  actionItems Json
+  generatedAt DateTime @default(now())
+}
+
+model ApiKey {
+  id         String       @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  keyHash    String       @unique
+  label      String?
+  lastUsedAt DateTime?
+  createdAt  DateTime     @default(now())
 }
